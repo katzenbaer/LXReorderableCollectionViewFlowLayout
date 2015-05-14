@@ -169,8 +169,8 @@ static NSString * const kLXCollectionViewKeyPath = @"collectionView";
     return (id<LXReorderableCollectionViewDelegateFlowLayout>)self.collectionView.delegate;
 }
 
-- (void)invalidateLayoutIfNecessary:(BOOL)forDrop {
-    NSIndexPath *newIndexPath = [self.collectionView indexPathForItemAtPoint:self.currentView.center];
+- (void)invalidateLayoutIfNecessary:(BOOL)forDrop AtPoint:(CGPoint)point {
+    NSIndexPath *newIndexPath = [self.collectionView indexPathForItemAtPoint:point];
     NSIndexPath *previousIndexPath = self.selectedItemIndexPath;
     
     if ((newIndexPath == nil) || [newIndexPath isEqual:previousIndexPath]) {
@@ -439,7 +439,8 @@ static NSString * const kLXCollectionViewKeyPath = @"collectionView";
             self.panTranslationInCollectionView = [gestureRecognizer translationInView:self.collectionView];
             CGPoint viewCenter = self.currentView.center = LXS_CGPointAdd(self.currentViewCenter, self.panTranslationInCollectionView);
             
-            [self invalidateLayoutIfNecessary:false];
+            [self invalidateLayoutIfNecessary:false
+                                      AtPoint:[gestureRecognizer locationInView:self.collectionView]];
             
             switch (self.scrollDirection) {
                 case UICollectionViewScrollDirectionVertical: {
@@ -468,7 +469,8 @@ static NSString * const kLXCollectionViewKeyPath = @"collectionView";
         } break;
         case UIGestureRecognizerStateCancelled:
         case UIGestureRecognizerStateEnded: {
-            [self invalidateLayoutIfNecessary:true];
+            [self invalidateLayoutIfNecessary:true
+                                      AtPoint:[gestureRecognizer locationInView:self.collectionView]];
             [self invalidatesScrollTimer];
         } break;
         default: {
