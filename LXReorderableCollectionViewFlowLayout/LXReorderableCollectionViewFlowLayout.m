@@ -169,7 +169,7 @@ static NSString * const kLXCollectionViewKeyPath = @"collectionView";
     return (id<LXReorderableCollectionViewDelegateFlowLayout>)self.collectionView.delegate;
 }
 
-- (void)invalidateLayoutIfNecessary {
+- (void)invalidateLayoutIfNecessary:(BOOL)forDrop {
     NSIndexPath *newIndexPath = [self.collectionView indexPathForItemAtPoint:self.currentView.center];
     NSIndexPath *previousIndexPath = self.selectedItemIndexPath;
     
@@ -177,8 +177,7 @@ static NSString * const kLXCollectionViewKeyPath = @"collectionView";
         return;
     }
     
-    if ([self.dataSource respondsToSelector:@selector(collectionView:itemAtIndexPath:canMoveToIndexPath:)] &&
-        ![self.dataSource collectionView:self.collectionView itemAtIndexPath:previousIndexPath canMoveToIndexPath:newIndexPath]) {
+    if (forDrop) {
         if ([self.dataSource respondsToSelector:@selector(collectionView:itemAtIndexPath:canDropInIndexPath:)] && ![self.dataSource collectionView:self.collectionView itemAtIndexPath:previousIndexPath canDropInIndexPath:newIndexPath]) {
             return;
         }
@@ -202,6 +201,11 @@ static NSString * const kLXCollectionViewKeyPath = @"collectionView";
             }
         }];
     } else {
+        if ([self.dataSource respondsToSelector:@selector(collectionView:itemAtIndexPath:canMoveToIndexPath:)] &&
+            ![self.dataSource collectionView:self.collectionView itemAtIndexPath:previousIndexPath canMoveToIndexPath:newIndexPath]) {
+            return;
+        }
+        
         self.selectedItemIndexPath = newIndexPath;
         
         if ([self.dataSource respondsToSelector:@selector(collectionView:itemAtIndexPath:willMoveToIndexPath:)]) {
@@ -435,7 +439,7 @@ static NSString * const kLXCollectionViewKeyPath = @"collectionView";
             self.panTranslationInCollectionView = [gestureRecognizer translationInView:self.collectionView];
             CGPoint viewCenter = self.currentView.center = LXS_CGPointAdd(self.currentViewCenter, self.panTranslationInCollectionView);
             
-            [self invalidateLayoutIfNecessary];
+            [self invalidateLayoutIfNecessary:false];
             
             switch (self.scrollDirection) {
                 case UICollectionViewScrollDirectionVertical: {
@@ -464,6 +468,7 @@ static NSString * const kLXCollectionViewKeyPath = @"collectionView";
         } break;
         case UIGestureRecognizerStateCancelled:
         case UIGestureRecognizerStateEnded: {
+            [self invalidateLayoutIfNecessary:true];
             [self invalidatesScrollTimer];
         } break;
         default: {
