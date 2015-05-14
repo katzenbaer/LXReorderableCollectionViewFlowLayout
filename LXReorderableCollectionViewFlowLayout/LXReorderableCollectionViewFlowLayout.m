@@ -179,28 +179,49 @@ static NSString * const kLXCollectionViewKeyPath = @"collectionView";
     
     if ([self.dataSource respondsToSelector:@selector(collectionView:itemAtIndexPath:canMoveToIndexPath:)] &&
         ![self.dataSource collectionView:self.collectionView itemAtIndexPath:previousIndexPath canMoveToIndexPath:newIndexPath]) {
-        return;
-    }
-    
-    self.selectedItemIndexPath = newIndexPath;
-    
-    if ([self.dataSource respondsToSelector:@selector(collectionView:itemAtIndexPath:willMoveToIndexPath:)]) {
-        [self.dataSource collectionView:self.collectionView itemAtIndexPath:previousIndexPath willMoveToIndexPath:newIndexPath];
-    }
+        if ([self.dataSource respondsToSelector:@selector(collectionView:itemAtIndexPath:canDropInIndexPath:)] && ![self.dataSource collectionView:self.collectionView itemAtIndexPath:previousIndexPath canDropInIndexPath:newIndexPath]) {
+            return;
+        }
+        
+        self.selectedItemIndexPath = newIndexPath;
+        
+        if ([self.dataSource respondsToSelector:@selector(collectionView:itemAtIndexPath:willDropInIndexPath:)]) {
+            [self.dataSource collectionView:self.collectionView itemAtIndexPath:previousIndexPath willDropInIndexPath:newIndexPath];
+        }
+        
+        __weak typeof(self) weakSelf = self;
+        [self.collectionView performBatchUpdates:^{
+            __strong typeof(self) strongSelf = weakSelf;
+            if (strongSelf) {
+                [strongSelf.collectionView deleteItemsAtIndexPaths:@[ previousIndexPath ]];
+            }
+        } completion:^(BOOL finished) {
+            __strong typeof(self) strongSelf = weakSelf;
+            if ([strongSelf.dataSource respondsToSelector:@selector(collectionView:itemAtIndexPath:didDropInIndexPath:)]) {
+                [strongSelf.dataSource collectionView:strongSelf.collectionView itemAtIndexPath:previousIndexPath didDropInIndexPath:newIndexPath];
+            }
+        }];
+    } else {
+        self.selectedItemIndexPath = newIndexPath;
+        
+        if ([self.dataSource respondsToSelector:@selector(collectionView:itemAtIndexPath:willMoveToIndexPath:)]) {
+            [self.dataSource collectionView:self.collectionView itemAtIndexPath:previousIndexPath willMoveToIndexPath:newIndexPath];
+        }
 
-    __weak typeof(self) weakSelf = self;
-    [self.collectionView performBatchUpdates:^{
-        __strong typeof(self) strongSelf = weakSelf;
-        if (strongSelf) {
-            [strongSelf.collectionView deleteItemsAtIndexPaths:@[ previousIndexPath ]];
-            [strongSelf.collectionView insertItemsAtIndexPaths:@[ newIndexPath ]];
-        }
-    } completion:^(BOOL finished) {
-        __strong typeof(self) strongSelf = weakSelf;
-        if ([strongSelf.dataSource respondsToSelector:@selector(collectionView:itemAtIndexPath:didMoveToIndexPath:)]) {
-            [strongSelf.dataSource collectionView:strongSelf.collectionView itemAtIndexPath:previousIndexPath didMoveToIndexPath:newIndexPath];
-        }
-    }];
+        __weak typeof(self) weakSelf = self;
+        [self.collectionView performBatchUpdates:^{
+            __strong typeof(self) strongSelf = weakSelf;
+            if (strongSelf) {
+                [strongSelf.collectionView deleteItemsAtIndexPaths:@[ previousIndexPath ]];
+                [strongSelf.collectionView insertItemsAtIndexPaths:@[ newIndexPath ]];
+            }
+        } completion:^(BOOL finished) {
+            __strong typeof(self) strongSelf = weakSelf;
+            if ([strongSelf.dataSource respondsToSelector:@selector(collectionView:itemAtIndexPath:didMoveToIndexPath:)]) {
+                [strongSelf.dataSource collectionView:strongSelf.collectionView itemAtIndexPath:previousIndexPath didMoveToIndexPath:newIndexPath];
+            }
+        }];
+    }
 }
 
 - (void)invalidatesScrollTimer {
