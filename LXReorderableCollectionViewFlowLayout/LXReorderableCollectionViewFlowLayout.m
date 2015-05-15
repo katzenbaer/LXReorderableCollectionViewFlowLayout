@@ -100,6 +100,7 @@ static NSString * const kLXCollectionViewKeyPath = @"collectionView";
     
     _panGestureRecognizer = [[UIPanGestureRecognizer alloc] initWithTarget:self
                                                                     action:@selector(handlePanGesture:)];
+    _panGestureRecognizer.maximumNumberOfTouches = 1;
     _panGestureRecognizer.delegate = self;
     [self.collectionView addGestureRecognizer:_panGestureRecognizer];
 
